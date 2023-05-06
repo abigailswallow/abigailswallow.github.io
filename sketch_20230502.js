@@ -1,9 +1,12 @@
 let dataUngrouped, dataGrouped, fencers;
 let margin, height, rowHeight;
-let athlete, fencerCounts;
+let athlete, fencerCounts = {};
 let button1, button2, button3, button4, button5;
 let blue, green, red, yellow, orange, teal, hoverFills;
 let radii;
+let hoverName;
+let fencerYPos = [];
+let circles = [];
 
 function preload() {
     dataUngrouped = loadJSON('data/ungrouped.json');
@@ -17,7 +20,7 @@ function setup() {
     /* -------------------------------------------------------------------------- */
     /*                                 PAGE SETUP                                 */
     /* -------------------------------------------------------------------------- */
-    height = windowHeight * 3
+    height = windowHeight * 3;
     createCanvas(windowWidth, height);
 
     /* ----------------------------- Color variables ---------------------------- */
@@ -38,7 +41,7 @@ function setup() {
 
     hoverFills = { 'grand_prix': blue, 'world_cup': orange, 'world_champs': red, 'zone_champs': teal, 'satellite': green, 'misc': yellow };
     noHoverFills = { 'grand_prix': blueHover, 'world_cup': orangeHover, 'world_champs': redHover, 'zone_champs': tealHover, 'satellite': greenHover, 'misc': yellowHover };
-    radii = {'grand_prix': 25, 'world_cup': 35, 'world_champs': 40, 'zone_champs': 20, 'satellite': 15, 'misc': 15 }
+    radii = { 'grand_prix': 25, 'world_cup': 35, 'world_champs': 40, 'zone_champs': 20, 'satellite': 15, 'misc': 15 }
 
 
     /* -------------------------------------------------------------------------- */
@@ -121,7 +124,7 @@ function draw() {
     /* -------------------------------------------------------------------------- */
 
     /* ---------------------------- Layout variables ---------------------------- */
-    margin = { top: 0.15 * windowHeight, right: 0.04 * windowWidth, bottom: 0.02 * windowHeight, left: 0.04 * windowWidth }
+    margin = { top: 0.15 * windowHeight, right: 0.1 * windowWidth, bottom: 0.02 * windowHeight, left: 0.04 * windowWidth }
     rowHeight = (height - margin.top) / fencers.length;
     let xposStart = margin.left + 250;
     let r = 20;
@@ -157,13 +160,17 @@ function draw() {
                 const competitionDate = new Date(20 + date_parts[2], date_parts[0] - 1, date_parts[1]).getTime();
                 xpos = map(competitionDate, 1041397200000, 1672549200000, xposStart, windowWidth - margin.right);
 
-                let type = dataGrouped[athlete].seasons[season].competitions[competition].type
+                let type = dataGrouped[athlete].seasons[season].competitions[competition].type;
                 fill(hoverFills[type]);
 
-                circle(xpos, rowHeight * i + margin.top, radii[type]);
+
+                let ypos = rowHeight * i + margin.top;
+                fencerYPos.push(ypos);
+                circle(xpos, ypos, radii[type]);
+
+                circles.push({ x: xpos, y: ypos, r: radii[type], fill: hoverFills[type], type: type});
             }
         }
-
     }
 
     /* ------------------ Add a timeline at the top of the page ----------------- */
@@ -182,8 +189,51 @@ function draw() {
 }
 
 function windowResized() {
+    height = windowHeight * 3;
     resizeCanvas(windowWidth, height);
 }
 
 /* ------------------------------ Hover effects ----------------------------- */
 
+function mouseMoved() {
+    for (let i = 0; i < fencerCounts.length; i++) {
+        let fencerCircles = []; // Create an array to hold all the circles for this fencer
+        let fencerName = fencerCounts[i].name;
+
+        // Loop through all the circles and find the circles for this fencer
+        for (let j = 0; j < circles.length; j++) {
+            let circleFencer = circles[j].fencer;
+            if (circleFencer === fencerName) {
+                fencerCircles.push(circles[j]); // Add the circle to the array of circles for this fencer
+            }
+        }
+
+        // console.log(circles)
+
+        // Check if the mouse is over any of the circles for this fencer
+        let isMouseOver = false;
+        for (let j = 0; j < fencerCircles.length; j++) {
+            let circle = fencerCircles[j];
+            let d = dist(mouseX, mouseY, circle.x, circle.y);
+            if (d < circle.r) {
+                isMouseOver = true;
+                break;
+            }
+        }
+
+        // If the mouse is over any of the circles for this fencer, change the fill color of all the circles for this fencer
+        if (isMouseOver) {
+            for (let j = 0; j < fencerCircles.length; j++) {
+                let circle = fencerCircles[j];
+                circle.fill = hoverFills[circle.type];
+            }
+        } else {
+            // If the mouse is not over any of the circles for this fencer, change the fill color of all the circles back to their original color
+            for (let j = 0; j < fencerCircles.length; j++) {
+                let circle = fencerCircles[j];
+                circle.fill = circle.fill;
+            }
+        }
+    }
+
+}
