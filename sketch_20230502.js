@@ -1,11 +1,10 @@
-let dataUngrouped, dataGrouped, fencers;
+let dataUngrouped, dataGrouped;
 let margin, height, rowHeight;
-let athlete, fencerCounts = {};
-let button1, button2, button3, button4, button5;
-let blue, green, red, yellow, orange, teal, hoverFills;
+let athleteName, fencerCounts = {};
+// let button1, button2, button3, button4, button5;
+let colA, colE, colC, colF, colB, colD, hoverFills;
+let colAHover, colBHover, colCHover, colDHover, colEHover, colFHover;
 let radii;
-let hoverName;
-let fencerYPos = [];
 let circles = [];
 
 function preload() {
@@ -25,22 +24,22 @@ function setup() {
 
     /* ----------------------------- Color variables ---------------------------- */
 
-    blue = color("#5778a4CC");
-    orange = color("#e49444CC");
-    red = color("#d1615dCC");
-    teal = color("#85b6b2CC");
-    green = color("#6a9f58CC");
-    yellow = color("#e7ca60CC");
+    colA = color("#002d9cE6");
+    colB = color("#009d9aE6");
+    colC = color("#9f1853E6");
+    colD = color("#570408E6");
+    colE = color("#a56effE6");
+    colF = color("#ff7eb6E6");
 
-    blueHover = color("#818ea1CC");
-    orangeHover = color("#e8c5a2CC");
-    redHover = color("#d19d9bCC");
-    tealHover = color("#9ab3b0CC");
-    greenHover = color("#879981CC");
-    yellowHover = color("#e3d5a1CC");
+    colAHover = color("#002d9c66");
+    colBHover = color("#009d9a66");
+    colCHover = color("#9f185366");
+    colDHover = color("#57040866");
+    colEHover = color("#a56eff66");
+    colFHover = color("#ff7eb666");
 
-    hoverFills = { 'grand_prix': blue, 'world_cup': orange, 'world_champs': red, 'zone_champs': teal, 'satellite': green, 'misc': yellow };
-    noHoverFills = { 'grand_prix': blueHover, 'world_cup': orangeHover, 'world_champs': redHover, 'zone_champs': tealHover, 'satellite': greenHover, 'misc': yellowHover };
+    hoverFills = { 'grand_prix': colA, 'world_cup': colB, 'world_champs': colC, 'zone_champs': colD, 'satellite': colE, 'misc': colF };
+    noHoverFills = { 'grand_prix': colAHover, 'world_cup': colBHover, 'world_champs': colCHover, 'zone_champs': colDHover, 'satellite': colEHover, 'misc': colFHover };
     radii = { 'grand_prix': 25, 'world_cup': 35, 'world_champs': 40, 'zone_champs': 20, 'satellite': 15, 'misc': 15 }
 
 
@@ -74,10 +73,7 @@ function setup() {
         return acc;
     }, {});
 
-    fencers = Object.keys(dataGrouped);
-    console.log(dataGrouped)
-
-    // console.log(fencers);
+    console.log(dataGrouped);
 
     /* ---------------------------- Sorting the data ---------------------------- */
     fencerCounts = Object.entries(dataGrouped).map(([name, data]) => {
@@ -112,6 +108,47 @@ function setup() {
     // button4 = createButton('Grand Prix Wins');
     // button4.position(width / 2 + button_width, windowHeight - 100);
     // button4.style("color", hoverFills['grand_prix'])
+
+    /* -------------------------------------------------------------------------- */
+    /*                    CREATE DATASET WITH CIRCLE POSITIONS                    */
+    /* -------------------------------------------------------------------------- */
+
+    /* ---------------------------- Layout variables ---------------------------- */
+    margin = { top: 0.15 * windowHeight, right: 0.1 * windowWidth, bottom: 0.02 * windowHeight, left: 0.04 * windowWidth }
+    rowHeight = (height - margin.top) / fencerCounts.length;
+    let xposStart = margin.left + 250;
+
+    /* --------------------- Create circle positions array ---------------------- */
+    for (let i = 0; i < fencerCounts.length; i++) {
+        athlete = fencerCounts[i].name;
+
+        // Reformat the names of athletes for clarity
+        athleteName = athlete.split(' ');
+        if (athleteName.length > 2) {
+            athleteName = athleteName.slice(-1) + " " + athleteName[0].toLowerCase().charAt(0).toUpperCase() + athleteName[0].toLowerCase().slice(1);
+        } else {
+            athleteName = athleteName[1] + " " + athleteName[0].toLowerCase().charAt(0).toUpperCase() + athleteName[0].toLowerCase().slice(1);
+        }
+
+        let athleteCircles = [];
+        let xpos = xposStart;
+        for (let season in dataGrouped[athlete].seasons) {
+            for (let competition in dataGrouped[athlete].seasons[season].competitions) {
+                let date = dataGrouped[athlete].seasons[season].competitions[competition].date;
+                const date_parts = date.split('/');
+                const competitionDate = new Date(20 + date_parts[2], date_parts[0] - 1, date_parts[1]).getTime();
+                xpos = map(competitionDate, 1041397200000, 1672549200000, xposStart, windowWidth - margin.right);
+
+                let type = dataGrouped[athlete].seasons[season].competitions[competition].type;
+                let ypos = rowHeight * i + margin.top;
+                athleteCircles.push({ x: xpos, y: ypos, r: radii[type], fill: noHoverFills[type], type: type, competition: competition, date: date });
+            }
+        }
+        circles.push({ name: athleteName, circles: athleteCircles })
+    }
+
+    console.log(circles)
+
 }
 
 function draw() {
@@ -123,53 +160,23 @@ function draw() {
     /*                         DRAWING TOURANMENT CIRCLES                         */
     /* -------------------------------------------------------------------------- */
 
-    /* ---------------------------- Layout variables ---------------------------- */
-    margin = { top: 0.15 * windowHeight, right: 0.1 * windowWidth, bottom: 0.02 * windowHeight, left: 0.04 * windowWidth }
-    rowHeight = (height - margin.top) / fencers.length;
-    let xposStart = margin.left + 250;
-    let r = 20;
-    // console.log(rowHeight)
-
     /* ---------- Loop through each fencer and draw tournament circles ---------- */
     textAlign(LEFT, CENTER);
     // title
     textStyle(BOLD)
     text("Who is the G.O.A.T of Women's Saber Fencing?", margin.left, windowHeight * 0.05)
     textStyle(NORMAL)
+    noStroke();
+    fill(0);
 
-    for (let i = 0; i < fencerCounts.length; i++) {
-
-        noStroke();
-        athlete = fencerCounts[i].name;
+    for (let i = 0; i < circles.length; i++) {
         fill(0);
+        text(circles[i].name, margin.left, rowHeight * i + margin.top);
 
-        let athleteName = athlete.split(' ');
-        if (athleteName.length > 2) {
-            athleteName = athleteName.slice(-1) + " " + athleteName[0].toLowerCase().charAt(0).toUpperCase() + athleteName[0].toLowerCase().slice(1);
-        } else {
-            athleteName = athleteName[1] + " " + athleteName[0].toLowerCase().charAt(0).toUpperCase() + athleteName[0].toLowerCase().slice(1);
-        }
-
-        text(athleteName, margin.left, rowHeight * i + margin.top);
-
-        let xpos = xposStart;
-        for (let season in dataGrouped[athlete].seasons) {
-            for (let competition in dataGrouped[athlete].seasons[season].competitions) {
-                let date = dataGrouped[athlete].seasons[season].competitions[competition].date;
-                const date_parts = date.split('/');
-                const competitionDate = new Date(20 + date_parts[2], date_parts[0] - 1, date_parts[1]).getTime();
-                xpos = map(competitionDate, 1041397200000, 1672549200000, xposStart, windowWidth - margin.right);
-
-                let type = dataGrouped[athlete].seasons[season].competitions[competition].type;
-                fill(hoverFills[type]);
-
-
-                let ypos = rowHeight * i + margin.top;
-                fencerYPos.push(ypos);
-                circle(xpos, ypos, radii[type]);
-
-                circles.push({ x: xpos, y: ypos, r: radii[type], fill: hoverFills[type], type: type});
-            }
+        for (let j = 0; j < circles[i].circles.length; j++) {
+            let circ = circles[i].circles[j];
+            fill(circ.fill);
+            circle(circ.x, circ.y, radii[circ.type]);
         }
     }
 
@@ -178,9 +185,9 @@ function draw() {
     fill(0);
     // horizontal line
     stroke(0);
-    line(xposStart, margin.top * 0.6, windowWidth - margin.right, margin.top * 0.6)
+    line(margin.left + 250, margin.top * 0.6, windowWidth - margin.right, margin.top * 0.6)
     for (let i = 2003; i <= 2023; i += 4) {
-        let xPos = map(i, 2003, 2023, xposStart, windowWidth - margin.right);
+        let xPos = map(i, 2003, 2023, margin.left + 250, windowWidth - margin.right);
         stroke(0);
         line(xPos, margin.top * 0.55, xPos, margin.top * 0.65);
         noStroke();
@@ -196,42 +203,34 @@ function windowResized() {
 /* ------------------------------ Hover effects ----------------------------- */
 
 function mouseMoved() {
-    for (let i = 0; i < fencerCounts.length; i++) {
-        let fencerCircles = []; // Create an array to hold all the circles for this fencer
-        let fencerName = fencerCounts[i].name;
-
-        // Loop through all the circles and find the circles for this fencer
-        for (let j = 0; j < circles.length; j++) {
-            let circleFencer = circles[j].fencer;
-            if (circleFencer === fencerName) {
-                fencerCircles.push(circles[j]); // Add the circle to the array of circles for this fencer
-            }
-        }
-
-        // console.log(circles)
+    for (let i = 0; i < circles.length; i++) {
 
         // Check if the mouse is over any of the circles for this fencer
         let isMouseOver = false;
-        for (let j = 0; j < fencerCircles.length; j++) {
-            let circle = fencerCircles[j];
-            let d = dist(mouseX, mouseY, circle.x, circle.y);
-            if (d < circle.r) {
+        for (let j = 0; j < circles[i].circles.length; j++) {
+            let circ = circles[i].circles[j];
+            let d = dist(mouseX, mouseY, circ.x, circ.y);
+            if (d < circ.r) {
                 isMouseOver = true;
+                textAlign(LEFT, LEFT)
+                fill(0)
+                // draw the name of the tournament
+                text(circ.date + " | " + circ.competition, circ.x + 20, circ.y)
                 break;
             }
         }
 
         // If the mouse is over any of the circles for this fencer, change the fill color of all the circles for this fencer
         if (isMouseOver) {
-            for (let j = 0; j < fencerCircles.length; j++) {
-                let circle = fencerCircles[j];
-                circle.fill = hoverFills[circle.type];
+            for (let j = 0; j < circles[i].circles.length; j++) {
+                let circ = circles[i].circles[j];
+                circ.fill = hoverFills[circ.type];
             }
         } else {
             // If the mouse is not over any of the circles for this fencer, change the fill color of all the circles back to their original color
-            for (let j = 0; j < fencerCircles.length; j++) {
-                let circle = fencerCircles[j];
-                circle.fill = circle.fill;
+            for (let j = 0; j < circles[i].circles.length; j++) {
+                let circ = circles[i].circles[j];
+                circ.fill = noHoverFills[circ.type];
             }
         }
     }
