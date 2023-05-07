@@ -2,10 +2,12 @@ let dataUngrouped, dataGrouped;
 let margin, height, rowHeight;
 let athleteName, fencerCounts = {};
 // let button1, button2, button3, button4, button5;
-let colA, colE, colC, colF, colB, colD, hoverFills;
+let colA, colE, colC, colF, colB, colD, colG, hoverFills, noHoverFills;
 let colAHover, colBHover, colCHover, colDHover, colEHover, colFHover;
 let radii;
 let circles = [];
+let filterOptions = {};
+let tournamentTypes = [];
 
 function preload() {
     dataUngrouped = loadJSON('data/ungrouped.json');
@@ -30,6 +32,7 @@ function setup() {
     colD = color("#570408E6");
     colE = color("#a56effE6");
     colF = color("#ff7eb6E6");
+    colG = color("#fa4d56E6");
 
     colAHover = color("#002d9c66");
     colBHover = color("#009d9a66");
@@ -37,10 +40,13 @@ function setup() {
     colDHover = color("#57040866");
     colEHover = color("#a56eff66");
     colFHover = color("#ff7eb666");
+    colGHover = color("#fa4d5666");
 
-    hoverFills = { 'grand_prix': colA, 'world_cup': colB, 'world_champs': colC, 'zone_champs': colD, 'satellite': colE, 'misc': colF };
-    noHoverFills = { 'grand_prix': colAHover, 'world_cup': colBHover, 'world_champs': colCHover, 'zone_champs': colDHover, 'satellite': colEHover, 'misc': colFHover };
-    radii = { 'grand_prix': 25, 'world_cup': 35, 'world_champs': 40, 'zone_champs': 20, 'satellite': 15, 'misc': 15 }
+    hoverFills = { 'grand_prix': colA, 'world_cup': colB, 'world_champs': colC, 'zone_champs': colD, 'satellite': colE, 'misc': colF, 'olympics': colG };
+    noHoverFills = { 'grand_prix': colAHover, 'world_cup': colBHover, 'world_champs': colCHover, 'zone_champs': colDHover, 'satellite': colEHover, 'misc': colFHover, 'olympics': colGHover };
+    radii = { 'grand_prix': 25, 'world_cup': 35, 'world_champs': 40, 'zone_champs': 20, 'satellite': 15, 'misc': 15, 'olympics': 40 }
+
+    margin = { top: 0.25 * windowHeight, right: 0.15 * windowWidth, bottom: 0.02 * windowHeight, left: 0.15 * windowWidth }
 
 
     /* -------------------------------------------------------------------------- */
@@ -75,6 +81,8 @@ function setup() {
 
     console.log(dataGrouped);
 
+    tournamentTypes = ["world_cup", "grand_prix", "misc", "zone_champs", "world_champs", "olympics", "satellite"]
+
     /* ---------------------------- Sorting the data ---------------------------- */
     fencerCounts = Object.entries(dataGrouped).map(([name, data]) => {
         let count = 0;
@@ -91,30 +99,31 @@ function setup() {
     /* -------------------------------------------------------------------------- */
     /*                               FILTER BUTTONS                               */
     /* -------------------------------------------------------------------------- */
-    // let button_width = 170;
-    // // create button1
-    // button1 = createButton('Total Wins');
-    // button1.position(width / 2 - button_width * 2, windowHeight - 100);
+    filterOptions = {
+        world_cup: true,
+        grand_prix: true,
+        olympics: true,
+        world_champss: true,
+        zone_champs: true,
+        misc: true,
+        satellite: true
+    };
 
-    // // create button2
-    // button2 = createButton('Olympic Wins');
-    // button2.position(width / 2 - button_width, windowHeight - 100);
-
-    // // create button3
-    // button3 = createButton('World Cup Wins');
-    // button3.position(width / 2, windowHeight - 100);
-    // button3.style("color", hoverFills['world_cup'])
-    // // create button4
-    // button4 = createButton('Grand Prix Wins');
-    // button4.position(width / 2 + button_width, windowHeight - 100);
-    // button4.style("color", hoverFills['grand_prix'])
+    for (let i = 0; i < tournamentTypes.length; i++) {
+        let type = tournamentTypes[i];
+        let checkbox = createCheckbox(type, true);
+        checkbox.position(width/2 - 300 + 120*i, margin.top / 2);
+        checkbox.class(type)
+        checkbox.changed(() => {
+            filterOptions[type] = checkbox.checked();
+        });
+    }
 
     /* -------------------------------------------------------------------------- */
     /*                    CREATE DATASET WITH CIRCLE POSITIONS                    */
     /* -------------------------------------------------------------------------- */
 
     /* ---------------------------- Layout variables ---------------------------- */
-    margin = { top: 0.15 * windowHeight, right: 0.1 * windowWidth, bottom: 0.02 * windowHeight, left: 0.04 * windowWidth }
     rowHeight = (height - margin.top) / fencerCounts.length;
     let xposStart = margin.left + 250;
 
@@ -159,16 +168,21 @@ function draw() {
     /* -------------------------------------------------------------------------- */
     /*                         DRAWING TOURANMENT CIRCLES                         */
     /* -------------------------------------------------------------------------- */
-
-    /* ---------- Loop through each fencer and draw tournament circles ---------- */
-    textAlign(LEFT, CENTER);
-    // title
+    /* ------------------------------- Title text ------------------------------- */
+    textAlign(CENTER, CENTER);
     textStyle(BOLD)
-    text("Who is the G.O.A.T of Women's Saber Fencing?", margin.left, windowHeight * 0.05)
+    textSize(32)
+    text("The History of Women's Saber Fencing", windowWidth / 2, windowHeight * 0.05);
+    textSize(20)
+    text("2003 - 2023", windowWidth / 2, windowHeight * 0.072)
     textStyle(NORMAL)
     noStroke();
     fill(0);
 
+    textSize(18)
+    textAlign(LEFT, CENTER);
+
+    /* ---------- Loop through each fencer and draw tournament circles ---------- */
     for (let i = 0; i < circles.length; i++) {
         fill(0);
         text(circles[i].name, margin.left, rowHeight * i + margin.top);
@@ -176,6 +190,9 @@ function draw() {
         for (let j = 0; j < circles[i].circles.length; j++) {
             let circ = circles[i].circles[j];
             fill(circ.fill);
+            if (!filterOptions[circ.type]) {
+                continue;
+            }
             circle(circ.x, circ.y, radii[circ.type]);
         }
     }
@@ -184,14 +201,15 @@ function draw() {
     textAlign(CENTER);
     fill(0);
     // horizontal line
-    stroke(0);
+    stroke("#a8a8a8");
     line(margin.left + 250, margin.top * 0.6, windowWidth - margin.right, margin.top * 0.6)
     for (let i = 2003; i <= 2023; i += 4) {
         let xPos = map(i, 2003, 2023, margin.left + 250, windowWidth - margin.right);
-        stroke(0);
+        stroke("#a8a8a8");
         line(xPos, margin.top * 0.55, xPos, margin.top * 0.65);
         noStroke();
-        text(i, xPos, margin.top - 25)
+        fill("#a8a8a8")
+        text(i, xPos, margin.top - 50)
     }
 }
 
@@ -210,12 +228,10 @@ function mouseMoved() {
         for (let j = 0; j < circles[i].circles.length; j++) {
             let circ = circles[i].circles[j];
             let d = dist(mouseX, mouseY, circ.x, circ.y);
-            if (d < circ.r) {
+            if (d < circ.r || mouseY < circ.y + 10 && mouseY > circ.y - 10) {
                 isMouseOver = true;
                 textAlign(LEFT, LEFT)
                 fill(0)
-                // draw the name of the tournament
-                text(circ.date + " | " + circ.competition, circ.x + 20, circ.y)
                 break;
             }
         }

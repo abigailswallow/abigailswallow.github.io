@@ -11,3 +11,29 @@ button {
   button:hover {
     background-color: #aeaeae;
   }
+
+  div label {
+    font-family: sans-serif;
+  }
+
+  div label input {
+    width: 20px;
+    height: 20px;
+    border-radius: 100%;
+    border: 1px solid #ccc;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+
+  div label input:before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: transparent;
+  }
