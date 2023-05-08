@@ -1,19 +1,27 @@
+// Constants
+const FONT_REGULAR = "data/SchibstedGrotesk-Regular.ttf";
+const FONT_BOLD = "data/SchibstedGrotesk-Bold.ttf"
+
+// Variables
+
 let dataUngrouped, dataGrouped;
 let margin, height, rowHeight;
 let athleteName, fencerCounts = {};
-// let button1, button2, button3, button4, button5;
-let colA, colE, colC, colF, colB, colD, colG, hoverFills, noHoverFills;
-let colAHover, colBHover, colCHover, colDHover, colEHover, colFHover;
+let colorOptions = {};
 let radii;
 let circles = [];
 let filterOptions = {};
 let tournamentTypes = [];
+let tooltipDiv;
+let fontBold, fontRegular;
 
 function preload() {
     dataUngrouped = loadJSON('data/ungrouped.json');
     print("JSON file loaded");
-}
 
+    fontRegular = loadFont(FONT_REGULAR);
+    fontBold = loadFont(FONT_BOLD)
+}
 
 
 function setup() {
@@ -26,79 +34,56 @@ function setup() {
 
     /* ----------------------------- Color variables ---------------------------- */
 
-    colA = color("#002d9cE6");
-    colB = color("#009d9aE6");
-    colC = color("#9f1853E6");
-    colD = color("#570408E6");
-    colE = color("#a56effE6");
-    colF = color("#ff7eb6E6");
-    colG = color("#fa4d56E6");
+    colorOptions = {
+        grand_prix: { fill: color("#002d9cE6"), hover: color("#002d9c66") },
+        world_cup: { fill: color("#009d9aE6"), hover: color("#009d9a66") },
+        world_champs: { fill: color("#9f1853E6"), hover: color("#9f185366") },
+        zone_champs: { fill: color("#570408E6"), hover: color("#57040866") },
+        satellite: { fill: color("#a56effE6"), hover: color("#a56eff66") },
+        misc: { fill: color("#ff7eb6E6"), hover: color("#ff7eb666") },
+        olympics: { fill: color("#fa4d56E6"), hover: color("#fa4d5666") },
+    };
 
-    colAHover = color("#002d9c66");
-    colBHover = color("#009d9a66");
-    colCHover = color("#9f185366");
-    colDHover = color("#57040866");
-    colEHover = color("#a56eff66");
-    colFHover = color("#ff7eb666");
-    colGHover = color("#fa4d5666");
-
-    hoverFills = { 'grand_prix': colA, 'world_cup': colB, 'world_champs': colC, 'zone_champs': colD, 'satellite': colE, 'misc': colF, 'olympics': colG };
-    noHoverFills = { 'grand_prix': colAHover, 'world_cup': colBHover, 'world_champs': colCHover, 'zone_champs': colDHover, 'satellite': colEHover, 'misc': colFHover, 'olympics': colGHover };
     radii = { 'grand_prix': 25, 'world_cup': 35, 'world_champs': 40, 'zone_champs': 20, 'satellite': 15, 'misc': 15, 'olympics': 40 }
 
-    margin = { top: 0.25 * windowHeight, right: 0.15 * windowWidth, bottom: 0.02 * windowHeight, left: 0.15 * windowWidth }
+    margin = { top: 0.33 * windowHeight, right: 0.15 * windowWidth, bottom: 0.02 * windowHeight, left: 0.15 * windowWidth }
 
 
     /* -------------------------------------------------------------------------- */
     /*                               DATA WRANGLING                               */
     /* -------------------------------------------------------------------------- */
-
     dataGrouped = Object.values(dataUngrouped).reduce((acc, cur) => {
-        // Group data by name_y
-        if (!acc[cur.name_y]) {
-            acc[cur.name_y] = { seasons: {} };
-        }
-
-        // Group data by season
-        if (!acc[cur.name_y].seasons[cur.season]) {
-            acc[cur.name_y].seasons[cur.season] = { competitions: {} };
-        }
-
-        // Group data by competition name
-        if (!acc[cur.name_y].seasons[cur.season].competitions[cur.name_x]) {
-            acc[cur.name_y].seasons[cur.season].competitions[cur.name_x] = {};
-        }
-
-        // Add competition information to the competition name
-        acc[cur.name_y].seasons[cur.season].competitions[cur.name_x] = {
-            country: cur.country_x,
-            date: cur.start_date,
-            type: cur.type
+        const { name_y, season, name_x, country_x, start_date, type } = cur;
+        acc[name_y] = acc[name_y] || { seasons: {} };
+        acc[name_y].seasons[season] = acc[name_y].seasons[season] || { competitions: {} };
+        acc[name_y].seasons[season].competitions[name_x] = {
+            country: country_x,
+            date: start_date,
+            type: type
         };
-
         return acc;
     }, {});
 
     console.log(dataGrouped);
 
-    tournamentTypes = ["world_cup", "grand_prix", "misc", "zone_champs", "world_champs", "olympics", "satellite"]
-
     /* ---------------------------- Sorting the data ---------------------------- */
-    fencerCounts = Object.entries(dataGrouped).map(([name, data]) => {
-        let count = 0;
-        for (let season in data.seasons) {
-            count += Object.keys(data.seasons[season].competitions).length;
-        }
-        return { name: name, count: count };
-    });
+    fencerCounts = Object.entries(dataGrouped).map(
+        ([name, data]) => ({
+            name: name,
+            count: Object.keys(data.seasons)
+                .map((season) => Object.keys(data.seasons[season].competitions).length)
+                .reduce((a, b) => a + b, 0),
+        })
+    ).sort((a, b) => b.count - a.count);
 
-    fencerCounts.sort((a, b) => b.count - a.count);
-
-    console.log(Object.values(fencerCounts))
+    console.log(Object.values(fencerCounts));
 
     /* -------------------------------------------------------------------------- */
     /*                               FILTER BUTTONS                               */
     /* -------------------------------------------------------------------------- */
+
+    tournamentTypes = ["world_champs", "olympics", "world_cup", "grand_prix", "zone_champs", "satellite", "misc"];
+
     filterOptions = {
         world_cup: true,
         grand_prix: true,
@@ -108,15 +93,32 @@ function setup() {
         misc: true,
         satellite: true
     };
+    let labelNames = [];
+
+    let xPos = 0;
+    let xposStart = margin.left + 250;
 
     for (let i = 0; i < tournamentTypes.length; i++) {
         let type = tournamentTypes[i];
-        let checkbox = createCheckbox(type, true);
-        checkbox.position(width/2 - 300 + 120*i, margin.top / 2);
-        checkbox.class(type)
+        let labelName = type.split('_');
+        if (labelName.length < 2) {
+            labelName = labelName[0].charAt(0).toUpperCase() + labelName[0].slice(1) + ' Wins';
+        } else {
+            labelName = labelName[0].charAt(0).toUpperCase() + labelName[0].slice(1) + ' ' + labelName[1].charAt(0).toUpperCase() + labelName[1].slice(1) + ' Wins'
+        }
+
+        labelNames.push(labelName)
+
+        console.log(labelName)
+        let checkbox = createCheckbox(labelName, true);
+        let xStart = xposStart + 30
+        checkbox.position(xPos + 75 * i + xStart, margin.top * 0.6);
+        checkbox.class(type + " checkbox");
         checkbox.changed(() => {
             filterOptions[type] = checkbox.checked();
         });
+
+        xPos += textWidth(labelNames[i])
     }
 
     /* -------------------------------------------------------------------------- */
@@ -125,19 +127,18 @@ function setup() {
 
     /* ---------------------------- Layout variables ---------------------------- */
     rowHeight = (height - margin.top) / fencerCounts.length;
-    let xposStart = margin.left + 250;
+
 
     /* --------------------- Create circle positions array ---------------------- */
     for (let i = 0; i < fencerCounts.length; i++) {
-        athlete = fencerCounts[i].name;
+        const { name: athlete } = fencerCounts[i];
+        const [lastName, firstName] = athlete.split(' ');
 
         // Reformat the names of athletes for clarity
-        athleteName = athlete.split(' ');
-        if (athleteName.length > 2) {
-            athleteName = athleteName.slice(-1) + " " + athleteName[0].toLowerCase().charAt(0).toUpperCase() + athleteName[0].toLowerCase().slice(1);
-        } else {
-            athleteName = athleteName[1] + " " + athleteName[0].toLowerCase().charAt(0).toUpperCase() + athleteName[0].toLowerCase().slice(1);
-        }
+        const athleteName =
+            firstName.length > 2 ?
+                `${firstName.toLowerCase().charAt(0).toUpperCase()}${firstName.toLowerCase().slice(1)} ${lastName.toLowerCase().charAt(0).toUpperCase()}${lastName.toLowerCase().slice(1)}` :
+                `${firstName} ${lastName}`;
 
         let athleteCircles = [];
         let xpos = xposStart;
@@ -149,8 +150,9 @@ function setup() {
                 xpos = map(competitionDate, 1041397200000, 1672549200000, xposStart, windowWidth - margin.right);
 
                 let type = dataGrouped[athlete].seasons[season].competitions[competition].type;
+                let country = dataGrouped[athlete].seasons[season].competitions[competition].country;
                 let ypos = rowHeight * i + margin.top;
-                athleteCircles.push({ x: xpos, y: ypos, r: radii[type], fill: noHoverFills[type], type: type, competition: competition, date: date });
+                athleteCircles.push({ x: xpos, y: ypos, r: radii[type], fill: colorOptions[type].hover, type: type, competition: competition, date: date, country: country });
             }
         }
         circles.push({ name: athleteName, circles: athleteCircles })
@@ -158,11 +160,17 @@ function setup() {
 
     console.log(circles)
 
+    /* -------------------------------------------------------------------------- */
+    /*                                  TOOLTIPS                                  */
+    /* -------------------------------------------------------------------------- */
+    tooltipDiv = createDiv('');
+    tooltipDiv.class('tooltip');
+    tooltipDiv.hide();
 }
 
 function draw() {
     background(255);
-    textSize(18);
+    textFont(fontRegular, 18);
     fill(0);
     noStroke();
     /* -------------------------------------------------------------------------- */
@@ -170,11 +178,13 @@ function draw() {
     /* -------------------------------------------------------------------------- */
     /* ------------------------------- Title text ------------------------------- */
     textAlign(CENTER, CENTER);
+    textFont(fontBold)
     textStyle(BOLD)
     textSize(32)
-    text("The History of Women's Saber Fencing", windowWidth / 2, windowHeight * 0.05);
+    text("The Short History of Women's Saber Fencing", windowWidth / 2, windowHeight * 0.05);
     textSize(20)
     text("2003 - 2023", windowWidth / 2, windowHeight * 0.072)
+    textFont(fontRegular)
     textStyle(NORMAL)
     noStroke();
     fill(0);
@@ -182,14 +192,43 @@ function draw() {
     textSize(18)
     textAlign(LEFT, CENTER);
 
+    /* ------------------ Add a timeline at the top of the page ----------------- */
+    textAlign(CENTER, CENTER);
+    fill(0);
+    // horizontal line
+    stroke("#a8a8a8");
+    line(margin.left + 250, margin.top * 0.8, windowWidth - margin.right, margin.top * 0.8)
+    for (let i = 2003; i <= 2023; i += 4) {
+        let xPos = map(i, 2003, 2023, margin.left + 250, windowWidth - margin.right);
+        stroke("#a8a8a8");
+        line(xPos, margin.top * 0.78, xPos, margin.top * 0.82);
+        noStroke();
+        fill("#a8a8a8")
+        text(i, xPos, margin.top * 0.85)
+    }
+
+    /* ----------------------------- Create dividers ---------------------------- */
+    // // For title
+    // line(40, 20, windowWidth - 40, 20)
+    // line(40, margin.top * 0.3, windowWidth - 40, margin.top * 0.3)
+    // For filters
+    text("Filter by:", margin.left + 200, margin.top * 0.625)
+    noFill()
+    stroke("#a8a8a8");
+    // rect(margin.left + 250, margin.top * 0.575, windowWidth - margin.left - margin.right - 250, margin.top * 0.1, 5)
+    noStroke();
+
     /* ---------- Loop through each fencer and draw tournament circles ---------- */
+    textAlign(LEFT, CENTER);
     for (let i = 0; i < circles.length; i++) {
         fill(0);
+        noStroke();
         text(circles[i].name, margin.left, rowHeight * i + margin.top);
 
         for (let j = 0; j < circles[i].circles.length; j++) {
             let circ = circles[i].circles[j];
             fill(circ.fill);
+            stroke(circ.fill)
             if (!filterOptions[circ.type]) {
                 continue;
             }
@@ -197,20 +236,35 @@ function draw() {
         }
     }
 
-    /* ------------------ Add a timeline at the top of the page ----------------- */
-    textAlign(CENTER);
-    fill(0);
-    // horizontal line
-    stroke("#a8a8a8");
-    line(margin.left + 250, margin.top * 0.6, windowWidth - margin.right, margin.top * 0.6)
-    for (let i = 2003; i <= 2023; i += 4) {
-        let xPos = map(i, 2003, 2023, margin.left + 250, windowWidth - margin.right);
-        stroke("#a8a8a8");
-        line(xPos, margin.top * 0.55, xPos, margin.top * 0.65);
-        noStroke();
-        fill("#a8a8a8")
-        text(i, xPos, margin.top - 50)
+    /* -------------------------------- Tooltips -------------------------------- */
+    textAlign(LEFT, CENTER)
+    let hoveredCircle = null;
+    for (let i = 0; i < circles.length; i++) {
+        for (let j = 0; j < circles[i].circles.length; j++) {
+            let circ = circles[i].circles[j];
+            if (!filterOptions[circ.type]) {
+                continue;
+            }
+            let d = dist(mouseX, mouseY, circ.x, circ.y)
+            if (d < circ.r) {
+                hoveredCircle = circ;
+                break;
+            }
+        }
     }
+
+    if (hoveredCircle) {
+        textStyle(BOLD)
+        textSize(18)
+        noStroke();
+        fill(hoveredCircle.fill);
+        rectMode(LEFT, CENTER)
+        rect(mouseX, mouseY + 15, textWidth(hoveredCircle.date + " - " + hoveredCircle.competition) + 30, 35, 5);
+        fill(255);
+        textFont(fontBold)
+        text(hoveredCircle.date + " - " + hoveredCircle.competition, mouseX + 10, mouseY + 30)
+    }
+
 }
 
 function windowResized() {
@@ -219,36 +273,19 @@ function windowResized() {
 }
 
 /* ------------------------------ Hover effects ----------------------------- */
-
 function mouseMoved() {
-    for (let i = 0; i < circles.length; i++) {
-
-        // Check if the mouse is over any of the circles for this fencer
-        let isMouseOver = false;
-        for (let j = 0; j < circles[i].circles.length; j++) {
-            let circ = circles[i].circles[j];
+    textAlign(LEFT, LEFT);
+    fill(0);
+    circles.forEach(fencer => {
+        let isMouseOver = fencer.circles.some(circ => {
             let d = dist(mouseX, mouseY, circ.x, circ.y);
-            if (d < circ.r || mouseY < circ.y + 10 && mouseY > circ.y - 10) {
-                isMouseOver = true;
-                textAlign(LEFT, LEFT)
-                fill(0)
-                break;
-            }
-        }
-
-        // If the mouse is over any of the circles for this fencer, change the fill color of all the circles for this fencer
-        if (isMouseOver) {
-            for (let j = 0; j < circles[i].circles.length; j++) {
-                let circ = circles[i].circles[j];
-                circ.fill = hoverFills[circ.type];
-            }
-        } else {
-            // If the mouse is not over any of the circles for this fencer, change the fill color of all the circles back to their original color
-            for (let j = 0; j < circles[i].circles.length; j++) {
-                let circ = circles[i].circles[j];
-                circ.fill = noHoverFills[circ.type];
-            }
-        }
-    }
-
+            return (d < circ.r || (mouseY < circ.y + 10 && mouseY > circ.y - 10 && mouseX > margin.left));
+        });
+        fencer.circles.forEach(circ => {
+            circ.fill = isMouseOver ? colorOptions[circ.type].fill : colorOptions[circ.type].hover;
+        });
+    });
 }
+
+
+

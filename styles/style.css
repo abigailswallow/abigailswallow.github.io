@@ -1,39 +1,121 @@
 button {
-    background-color: #ffffff;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #aeaeae;
-  }
+  background-color: #ffffff;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  cursor: pointer;
+}
 
-  div label {
-    font-family: sans-serif;
-  }
+button:hover {
+  background-color: #aeaeae;
+}
 
-  div label input {
-    width: 20px;
-    height: 20px;
-    border-radius: 100%;
-    border: 1px solid #ccc;
-    margin-right: 10px;
-    vertical-align: middle;
-  }
 
-  div label input:before {
-    content: "";
-    display: block;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: transparent;
-  }
+/* Labels */
+
+.checkbox label {
+  font-family: sans-serif;
+  line-height: 1.1;
+  font-size: 1rem;
+
+  display: grid;
+  grid-template-columns: 1em auto;
+  gap: 0.5em;
+}
+
+/* Hide native checkboxes */
+input[type="checkbox"] {
+  /* Add if not using autoprefixer */
+  -webkit-appearance: none;
+  appearance: none;
+  /* For iOS < 15 to remove gradient background */
+  background-color: #fff;
+  /* Not removed via appearance */
+  margin: 0;
+
+  font: inherit;
+  color: currentColor;
+  width: 1.15em;
+  height: 1.15em;
+  border: 0.15em solid currentColor;
+  border-radius: 100%;
+  transform: translateY(-0.075em);
+
+  display: grid;
+  place-content: center;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 0.65em;
+  height: 0.65em;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  /* box-shadow: inset 1em 1em #aeaeae; */
+  border-radius: 100%;
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.world_cup input[type="checkbox"] {
+  border: 0.15em solid #009d9a;
+}
+
+.world_cup input[type="checkbox"]::before {
+  box-shadow: inset 1em 1em #009d9a;
+}
+
+.grand_prix input[type="checkbox"] {
+  border: 0.15em solid #002d9c;
+}
+
+.grand_prix input[type="checkbox"]::before {
+  box-shadow: inset 1em 1em #002d9c;
+}
+
+.misc input[type="checkbox"] {
+  border: 0.15em solid #ff7eb6;
+}
+
+.misc input[type="checkbox"]::before {
+  box-shadow: inset 1em 1em #ff7eb6;
+}
+
+.zone_champs input[type="checkbox"] {
+  border: 0.15em solid #570408;
+}
+
+.zone_champs input[type="checkbox"]::before {
+  box-shadow: inset 1em 1em #570408;
+}
+
+.world_champs input[type="checkbox"] {
+  border: 0.15em solid #9f1853;
+}
+
+.world_champs input[type="checkbox"]::before {
+  box-shadow: inset 1em 1em #9f1853;
+}
+
+.olympics input[type="checkbox"] {
+  border: 0.15em solid #fa4d56;
+}
+
+.olympics input[type="checkbox"]::before {
+  box-shadow: inset 1em 1em #fa4d56;
+}
+
+.satellite input[type="checkbox"] {
+  border: 0.15em solid #a56eff;
+}
+
+.satellite input[type="checkbox"]::before {
+  box-shadow: inset 1em 1em #a56eff;
+}
+
+
+
