@@ -3,7 +3,6 @@ const FONT_REGULAR = "data/SchibstedGrotesk-Regular.ttf";
 const FONT_BOLD = "data/SchibstedGrotesk-Bold.ttf"
 
 // Variables
-
 let dataUngrouped, dataGrouped;
 let margin, height, rowHeight;
 let athleteName, fencerCounts = {};
@@ -11,9 +10,14 @@ let colorOptions = {};
 let radii;
 let circles = [];
 let filterOptions = {};
+let checkboxes = [];
 let tournamentTypes = [];
 let tooltipDiv;
 let fontBold, fontRegular;
+let sceneNum = 0;
+
+let overviewButton, matchupButton;
+let selectFirstFencer, selectSecondFencer;
 
 function preload() {
     dataUngrouped = loadJSON('data/ungrouped.json');
@@ -98,6 +102,8 @@ function setup() {
     let xPos = 0;
     let xposStart = margin.left + 250;
 
+
+
     for (let i = 0; i < tournamentTypes.length; i++) {
         let type = tournamentTypes[i];
         let labelName = type.split('_');
@@ -110,7 +116,9 @@ function setup() {
         labelNames.push(labelName)
 
         console.log(labelName)
+
         let checkbox = createCheckbox(labelName, true);
+        checkboxes.push(checkbox);
         let xStart = xposStart + 30
         checkbox.position(xPos + 75 * i + xStart, margin.top * 0.6);
         checkbox.class(type + " checkbox");
@@ -118,8 +126,12 @@ function setup() {
             filterOptions[type] = checkbox.checked();
         });
 
-        xPos += textWidth(labelNames[i])
+        xPos += textWidth(labelNames[i]);
+
+
     }
+
+    console.log(checkboxes)
 
     /* -------------------------------------------------------------------------- */
     /*                    CREATE DATASET WITH CIRCLE POSITIONS                    */
@@ -166,103 +178,180 @@ function setup() {
     tooltipDiv = createDiv('');
     tooltipDiv.class('tooltip');
     tooltipDiv.hide();
+
+    /* -------------------------------------------------------------------------- */
+    /*                               MATCHUP FILTERS                              */
+    /* -------------------------------------------------------------------------- */
+    // Create select element
+    selectFirstFencer = createSelect();
+    selectFirstFencer.position(margin.left + windowWidth * 0.15, margin.top * 0.7);
+    selectFirstFencer.option('Select Fencer')
+    selectFirstFencer.disable('Select Fencer')
+
+    selectSecondFencer = createSelect();
+    selectSecondFencer.position(windowWidth - margin.right - windowWidth * 0.25, margin.top * 0.7);
+    selectSecondFencer.option('Select Fencer')
+    selectSecondFencer.disable('Select Fencer')
+    selectSecondFencer.option('Mariel Zagunis')
+    selectSecondFencer.selected('Mariel Zagunis')
+
+    // Add fencer names as options
+    for (let i = 0; i < fencerCounts.length; i++) {
+        const { name: athlete } = fencerCounts[i];
+        const [lastName, firstName] = athlete.split(' ');
+
+        // Reformat the names of athletes for clarity
+        const athleteName =
+            firstName.length > 2 ?
+                `${firstName.toLowerCase().charAt(0).toUpperCase()}${firstName.toLowerCase().slice(1)} ${lastName.toLowerCase().charAt(0).toUpperCase()}${lastName.toLowerCase().slice(1)}` :
+                `${firstName} ${lastName}`;
+        selectFirstFencer.option(athleteName);
+        selectSecondFencer.option(athleteName);
+    }
+
+    // Set event listener for select element
+    selectFirstFencer.changed(displayFencerStats);
+    selectSecondFencer.changed(displayFencerStats);
+
+    /* -------------------------------------------------------------------------- */
+    /*                                SWITCH SCENES                               */
+    /* -------------------------------------------------------------------------- */
+    overviewButton = createButton("Overview");
+    overviewButton.position(windowWidth / 2 - 125, margin.top * 0.4);
+    overviewButton.mousePressed(showOverview)
+
+    matchupButton = createButton("Head to Head");
+    matchupButton.position(windowWidth / 2, margin.top * 0.4);
+    matchupButton.mousePressed(showMatchup);
+
+
 }
 
 function draw() {
-    background(255);
-    textFont(fontRegular, 18);
-    fill(0);
-    noStroke();
-    /* -------------------------------------------------------------------------- */
-    /*                         DRAWING TOURANMENT CIRCLES                         */
-    /* -------------------------------------------------------------------------- */
-    /* ------------------------------- Title text ------------------------------- */
-    textAlign(CENTER, CENTER);
-    textFont(fontBold)
-    textStyle(BOLD)
-    textSize(32)
-    text("The Short History of Women's Saber Fencing", windowWidth / 2, windowHeight * 0.05);
-    textSize(20)
-    text("2003 - 2023", windowWidth / 2, windowHeight * 0.072)
-    textFont(fontRegular)
-    textStyle(NORMAL)
-    noStroke();
-    fill(0);
 
-    textSize(18)
-    textAlign(LEFT, CENTER);
+    switch (sceneNum) {
+        case 0:
+            console.log("scene 0")
+            background(255);
+            textFont(fontRegular, 18);
+            fill(0);
+            noStroke();
 
-    /* ------------------ Add a timeline at the top of the page ----------------- */
-    textAlign(CENTER, CENTER);
-    fill(0);
-    // horizontal line
-    stroke("#a8a8a8");
-    line(margin.left + 250, margin.top * 0.8, windowWidth - margin.right, margin.top * 0.8)
-    for (let i = 2003; i <= 2023; i += 4) {
-        let xPos = map(i, 2003, 2023, margin.left + 250, windowWidth - margin.right);
-        stroke("#a8a8a8");
-        line(xPos, margin.top * 0.78, xPos, margin.top * 0.82);
-        noStroke();
-        fill("#a8a8a8")
-        text(i, xPos, margin.top * 0.85)
-    }
-
-    /* ----------------------------- Create dividers ---------------------------- */
-    // // For title
-    // line(40, 20, windowWidth - 40, 20)
-    // line(40, margin.top * 0.3, windowWidth - 40, margin.top * 0.3)
-    // For filters
-    text("Filter by:", margin.left + 200, margin.top * 0.625)
-    noFill()
-    stroke("#a8a8a8");
-    // rect(margin.left + 250, margin.top * 0.575, windowWidth - margin.left - margin.right - 250, margin.top * 0.1, 5)
-    noStroke();
-
-    /* ---------- Loop through each fencer and draw tournament circles ---------- */
-    textAlign(LEFT, CENTER);
-    for (let i = 0; i < circles.length; i++) {
-        fill(0);
-        noStroke();
-        text(circles[i].name, margin.left, rowHeight * i + margin.top);
-
-        for (let j = 0; j < circles[i].circles.length; j++) {
-            let circ = circles[i].circles[j];
-            fill(circ.fill);
-            stroke(circ.fill)
-            if (!filterOptions[circ.type]) {
-                continue;
+            for (let i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].show();
             }
-            circle(circ.x, circ.y, radii[circ.type]);
-        }
-    }
 
-    /* -------------------------------- Tooltips -------------------------------- */
-    textAlign(LEFT, CENTER)
-    let hoveredCircle = null;
-    for (let i = 0; i < circles.length; i++) {
-        for (let j = 0; j < circles[i].circles.length; j++) {
-            let circ = circles[i].circles[j];
-            if (!filterOptions[circ.type]) {
-                continue;
-            }
-            let d = dist(mouseX, mouseY, circ.x, circ.y)
-            if (d < circ.r) {
-                hoveredCircle = circ;
-                break;
-            }
-        }
-    }
+            selectFirstFencer.hide();
+            selectSecondFencer.hide();
 
-    if (hoveredCircle) {
-        textStyle(BOLD)
-        textSize(18)
-        noStroke();
-        fill(hoveredCircle.fill);
-        rectMode(LEFT, CENTER)
-        rect(mouseX, mouseY + 15, textWidth(hoveredCircle.date + " - " + hoveredCircle.competition) + 30, 35, 5);
-        fill(255);
-        textFont(fontBold)
-        text(hoveredCircle.date + " - " + hoveredCircle.competition, mouseX + 10, mouseY + 30)
+            matchupButton.class("");
+            overviewButton.class("selected")
+            /* -------------------------------------------------------------------------- */
+            /*                         DRAWING TOURANMENT CIRCLES                         */
+            /* -------------------------------------------------------------------------- */
+            /* ------------------------------- Title text ------------------------------- */
+            drawTitle()
+
+            textSize(18)
+            textAlign(LEFT, CENTER);
+
+            /* ------------------ Add a timeline at the top of the page ----------------- */
+            textAlign(CENTER, CENTER);
+            fill(0);
+            // horizontal line
+            stroke("#a8a8a8");
+            line(margin.left + 250, margin.top * 0.8, windowWidth - margin.right, margin.top * 0.8)
+            for (let i = 2003; i <= 2023; i += 4) {
+                let xPos = map(i, 2003, 2023, margin.left + 250, windowWidth - margin.right);
+                stroke("#a8a8a8");
+                line(xPos, margin.top * 0.78, xPos, margin.top * 0.82);
+                noStroke();
+                fill("#a8a8a8")
+                text(i, xPos, margin.top * 0.85)
+            }
+
+            /* ----------------------------- Create dividers ---------------------------- */
+            // // For title
+            // line(40, 20, windowWidth - 40, 20)
+            // line(40, margin.top * 0.3, windowWidth - 40, margin.top * 0.3)
+            // For filters
+            text("Filter by:", margin.left + 200, margin.top * 0.625)
+            noFill()
+            stroke("#a8a8a8");
+            // rect(margin.left + 250, margin.top * 0.575, windowWidth - margin.left - margin.right - 250, margin.top * 0.1, 5)
+            noStroke();
+
+            /* ---------- Loop through each fencer and draw tournament circles ---------- */
+            textAlign(LEFT, CENTER);
+            for (let i = 0; i < circles.length; i++) {
+                fill(0);
+                noStroke();
+                text(circles[i].name, margin.left, rowHeight * i + margin.top);
+
+                for (let j = 0; j < circles[i].circles.length; j++) {
+                    let circ = circles[i].circles[j];
+                    fill(circ.fill);
+                    stroke(circ.fill)
+                    if (!filterOptions[circ.type]) {
+                        continue;
+                    }
+                    circle(circ.x, circ.y, radii[circ.type]);
+                }
+            }
+
+            /* -------------------------------- Tooltips -------------------------------- */
+            textAlign(LEFT, CENTER)
+            let hoveredCircle = null;
+            for (let i = 0; i < circles.length; i++) {
+                for (let j = 0; j < circles[i].circles.length; j++) {
+                    let circ = circles[i].circles[j];
+                    if (!filterOptions[circ.type]) {
+                        continue;
+                    }
+                    let d = dist(mouseX, mouseY, circ.x, circ.y)
+                    if (d < circ.r) {
+                        hoveredCircle = circ;
+                        break;
+                    }
+                }
+            }
+
+            if (hoveredCircle) {
+                textStyle(BOLD)
+                textSize(18)
+                noStroke();
+                fill(hoveredCircle.fill);
+                rectMode(LEFT, CENTER)
+                rect(mouseX, mouseY + 15, textWidth(hoveredCircle.date + " - " + hoveredCircle.competition) + 30, 35, 5);
+                fill(255);
+                textFont(fontBold)
+                text(hoveredCircle.date + " - " + hoveredCircle.competition, mouseX + 10, mouseY + 30)
+            }
+
+            break;
+
+        case 1:
+            console.log("scene 1");
+            background(255);
+
+            for (let i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].hide();
+            }
+
+            selectFirstFencer.show();
+            selectSecondFencer.show();
+
+            textAlign(CENTER, CENTER)
+            text("vs.", width / 2, margin.top * 0.7)
+
+            matchupButton.class("selected");
+            overviewButton.class("");
+
+            /* ------------------------------- Title text ------------------------------- */
+            drawTitle();
+
+            break;
+
     }
 
 }
@@ -276,16 +365,55 @@ function windowResized() {
 function mouseMoved() {
     textAlign(LEFT, LEFT);
     fill(0);
-    circles.forEach(fencer => {
-        let isMouseOver = fencer.circles.some(circ => {
-            let d = dist(mouseX, mouseY, circ.x, circ.y);
-            return (d < circ.r || (mouseY < circ.y + 10 && mouseY > circ.y - 10 && mouseX > margin.left));
+    if (sceneNum == 0) {
+        circles.forEach(fencer => {
+            let isMouseOver = fencer.circles.some(circ => {
+                let d = dist(mouseX, mouseY, circ.x, circ.y);
+                return (d < circ.r || (mouseY < circ.y + 10 && mouseY > circ.y - 10 && mouseX > margin.left));
+            });
+            fencer.circles.forEach(circ => {
+                circ.fill = isMouseOver ? colorOptions[circ.type].fill : colorOptions[circ.type].hover;
+            });
         });
-        fencer.circles.forEach(circ => {
-            circ.fill = isMouseOver ? colorOptions[circ.type].fill : colorOptions[circ.type].hover;
-        });
-    });
+    }
+
+}
+
+function drawTitle() {
+    textAlign(CENTER, CENTER);
+    textFont(fontBold)
+    textSize(32)
+    text("The Short History of Women's Saber Fencing", windowWidth / 2, windowHeight * 0.05);
+    textSize(20)
+    text("2003 - 2023", windowWidth / 2, windowHeight * 0.085)
+    textFont(fontRegular)
+    noStroke();
+    fill(0);
 }
 
 
+function showOverview() {
+    sceneNum = 0;
+}
 
+function showMatchup() {
+    sceneNum = 1;
+}
+
+function displayFencerStats() {
+    // Get selected fencer name
+    let selectedFencer = this.value();
+
+    // Search fencers array for selected fencer
+    for (let i = 0; i < fencers.length; i++) {
+        if (fencers[i].name === selectedFencer) {
+            // Display fencer stats
+            textSize(20);
+            text(fencers[i].name, 10, 50);
+            textSize(16);
+            text("Career Wins: " + fencers[i].wins, 10, 80);
+            text("Career Losses: " + fencers[i].losses, 10, 100);
+            text("Win Percentage: " + (fencers[i].wins / (fencers[i].wins + fencers[i].losses) * 100) + "%", 10, 120);
+        }
+    }
+}

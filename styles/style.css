@@ -6,10 +6,16 @@ button {
   display: inline-block;
   font-size: 16px;
   cursor: pointer;
+  border-radius: 10px;
 }
 
 button:hover {
   background-color: #aeaeae;
+}
+
+.selected {
+  background-color: #000000;
+  color: #ffffff;
 }
 
 
@@ -115,6 +121,12 @@ input[type="checkbox"]:checked::before {
 
 .satellite input[type="checkbox"]::before {
   box-shadow: inset 1em 1em #a56eff;
+}
+
+select {
+  font-size: 1.2rem;
+  padding: 5px 10px;
+  border-radius: 5px;
 }
 
 
