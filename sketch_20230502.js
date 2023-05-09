@@ -544,8 +544,8 @@ function draw() {
             let statsHeight = (windowHeight - statsTop) / 4
             stroke(180);
             line(width / 2, windowHeight * 0.735, width / 2, windowHeight);
-            line(windowWidth/2 - 450, windowHeight * 0.735, windowWidth/2 + 450, windowHeight * 0.735);
-            line(windowWidth/2 - 450, windowHeight * 0.77, windowWidth/2 + 450, windowHeight * 0.77);
+            line(windowWidth / 2 - 450, windowHeight * 0.735, windowWidth / 2 + 450, windowHeight * 0.735);
+            line(windowWidth / 2 - 450, windowHeight * 0.77, windowWidth / 2 + 450, windowHeight * 0.77);
 
             textAlign(LEFT, CENTER);
             textFont(fontRegular, 18);
