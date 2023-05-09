@@ -298,11 +298,11 @@ function setup() {
     /*                                SWITCH SCENES                               */
     /* -------------------------------------------------------------------------- */
     overviewButton = createButton("Overview");
-    overviewButton.position(windowWidth / 2 - 125, margin.top * 0.4);
+    overviewButton.position(windowWidth / 2 - 120, margin.top * 0.4);
     overviewButton.mousePressed(showOverview)
 
     matchupButton = createButton("Head to Head");
-    matchupButton.position(windowWidth / 2, margin.top * 0.4);
+    matchupButton.position(windowWidth / 2 + 10, margin.top * 0.4);
     matchupButton.mousePressed(showMatchup);
 
 
@@ -357,7 +357,7 @@ function draw() {
             // line(40, 20, windowWidth - 40, 20)
             // line(40, margin.top * 0.3, windowWidth - 40, margin.top * 0.3)
             // For filters
-            text("Filter by:", margin.left + 200, margin.top * 0.625)
+            text("Filter by:", margin.left + 200, margin.top * 0.615)
             noFill()
             stroke("#a8a8a8");
             // rect(margin.left + 250, margin.top * 0.575, windowWidth - margin.left - margin.right - 250, margin.top * 0.1, 5)
@@ -444,7 +444,7 @@ function draw() {
             let fencerAData = ranksGrouped[fencerA];
             let fencerBData = ranksGrouped[fencerB];
 
-            let left = margin.left + windowWidth * 0.15;
+            let left = margin.left + windowWidth * 0.15 + 10;
             let right = windowWidth - margin.right - windowWidth * 0.25;
             let top = margin.top * 0.84;
             let spacing = 35
@@ -456,9 +456,9 @@ function draw() {
             text("Hand: " + fencerAData.hand, left, top + spacing);
             text(fencerAData.age + " years old", left, top + spacing * 2)
 
-            text(fencerBData.country.toLowerCase().charAt(0).toUpperCase() + fencerBData.country.toLowerCase().slice(1), right, top);
-            text("Hand: " + fencerBData.hand, right, top + spacing);
-            text(fencerBData.age + " years old", right, top + spacing * 2);
+            text(fencerBData.country.toLowerCase().charAt(0).toUpperCase() + fencerBData.country.toLowerCase().slice(1), right + 10, top);
+            text("Hand: " + fencerBData.hand, right + 10, top + spacing);
+            text(fencerBData.age + " years old", right + 10, top + spacing * 2);
 
             /* ------------------------------ Ranking graph ----------------------------- */
             textAlign(CENTER, CENTER)
@@ -468,8 +468,8 @@ function draw() {
             textFont(fontRegular);
             textSize(14)
             textAlign(RIGHT, CENTER)
-            text("1", left - 10, top + spacing * 5);
-            text("500", left - 10, windowHeight * 0.64);
+            text("1", left - 30, top + spacing * 5);
+            text("500", left - 30, windowHeight * 0.64);
             // draw the data for fencer1
             noFill();
             strokeWeight(4);
@@ -570,6 +570,8 @@ function draw() {
                 }
             }
 
+            textAlign(CENTER, CENTER)
+            textAlign(LEFT, CENTER)
             fill(colorOptions['olympics'].fill)
             drawStatsRect(windowWidth / 2 - 125, statsTop)
             fill(255)
@@ -582,9 +584,11 @@ function draw() {
 
 
             // Olympic medals
+            textAlign(LEFT, CENTER)
             fill(100)
             text("Olympic Gold Medals", left - 50, statsTop + statsHeight);
 
+            textAlign(CENTER, CENTER)
             fill(colorOptions['olympics'].fill)
             drawStatsRect(windowWidth / 2 - 125, statsTop + statsHeight)
             fill(255)
@@ -597,8 +601,10 @@ function draw() {
 
             // World Championships
             fill(100)
+            textAlign(LEFT, CENTER)
             text("World Championships", left - 50, statsTop + statsHeight * 2);
 
+            textAlign(CENTER, CENTER)
             fill(colorOptions['olympics'].fill)
             drawStatsRect(windowWidth / 2 - 125, statsTop + statsHeight * 2)
             fill(255)
@@ -611,8 +617,10 @@ function draw() {
 
             // World Cups
             fill(100)
+            textAlign(LEFT, CENTER)
             text("World Cup Wins", left - 50, statsTop + statsHeight * 3);
 
+            textAlign(CENTER, CENTER)
             fill(colorOptions['olympics'].fill)
             drawStatsRect(windowWidth / 2 - 125, statsTop + statsHeight * 3)
             fill(255)
