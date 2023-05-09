@@ -15,7 +15,7 @@ let checkboxes = [];
 let tournamentTypes = [];
 let tooltipDiv;
 let fontBold, fontRegular;
-let sceneNum = 1;
+let sceneNum = 0;
 
 let overviewButton, matchupButton;
 let selectFencerA, selectFencerB;
